@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="请选择包含音乐文件的目录"
+        android:textSize="24sp"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/dialog_title"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/dialog_title"
+        android:text="返回父目录"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp"
+        android:id="@+id/return_to_father"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textIsSelectable="false"
+        android:layout_toRightOf="@+id/return_to_father"
+        android:layout_alignBottom="@+id/return_to_father"
+        android:id="@+id/show_file_path"
+        />
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="300dp"
+        android:layout_below="@+id/return_to_father"
+        android:layout_marginBottom="5dp"
+        android:footerDividersEnabled="true"
+        android:headerDividersEnabled="true"
+        android:id="@+id/filelist">
+    </ListView>
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/filelist"
+        android:text="确定"
+        android:id="@+id/ok_button"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/filelist"
+        android:layout_alignParentRight="true"
+        android:layout_alignBottom="@+id/ok_button"
+        android:text="取消"
+        android:id="@+id/cancel_button"/>
+
+</RelativeLayout>
