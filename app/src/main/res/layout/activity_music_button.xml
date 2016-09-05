@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Open Files"
-        android:layout_toRightOf="@+id/StopMusic"
+        android:layout_toEndOf="@+id/StopMusic"
         android:layout_alignTop="@+id/PlayMusic"
         android:layout_alignBottom="@+id/NextSong"
         android:id="@+id/openFiles"/>
@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop"
-        android:layout_toRightOf="@+id/PlayMusic"
+        android:layout_toEndOf="@+id/PlayMusic"
         android:layout_marginBottom="10dp"
         android:id="@+id/StopMusic"/>
 
@@ -43,7 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="下一首"
-        android:layout_toRightOf="@+id/PreviousSong"
+        android:layout_toEndOf="@+id/PreviousSong"
         android:layout_alignBaseline="@+id/PreviousSong"
         android:layout_marginBottom="10dp"
         android:id="@+id/NextSong"/>
@@ -68,7 +68,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="00m00s"
-        android:layout_alignRight="@+id/SongProgress"
+        android:layout_toEndOf="@+id/SongProgress"
         android:layout_below="@+id/SongProgress"
         android:id="@+id/MusicLength"
         />
