@@ -83,19 +83,12 @@
         android:id="@+id/MusicPlayTime"/>
 
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/MusicPlayTime"
-        android:text="播放列表："
-        android:id="@+id/play_list_text"/>
-
-    <ListView
-        android:id="@+id/play_list"
-        android:layout_marginTop="10dp"
-        android:layout_below="@+id/play_list_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"></ListView>
+    <!--<TextView-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_below="@+id/MusicPlayTime"-->
+    <!--android:text="歌曲名："-->
+    <!--android:id="@+id/MusicName"/>-->
 
 
 </RelativeLayout>
