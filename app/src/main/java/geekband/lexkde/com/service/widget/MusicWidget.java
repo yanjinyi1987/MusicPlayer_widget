@@ -76,12 +76,21 @@ public class MusicWidget extends AppWidgetProvider {
                 ComponentName componentName = new ComponentName(context,MusicWidget.class);
                 appWidgetManager.updateAppWidget(componentName,remoteViews);
             }
-            else if(TextUtils.equals(intent.getAction(),MusicPlayerService.CHANGE_PROGRESS_TEXT)){
+            else if(TextUtils.equals(intent.getAction(),MusicPlayerService.CHANGE_PROGRESS_BAR)){
                 String progress = intent.getStringExtra(MusicPlayerService.UPDATE_TEXT);
                 Log.i("Progress", progress);
                 RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.activity_music_button);
                 remoteViews.setProgressBar(R.id.SongProgress,100,Integer.valueOf(progress),false);
 
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+                ComponentName componentName = new ComponentName(context,MusicWidget.class);
+                appWidgetManager.updateAppWidget(componentName,remoteViews);
+            }
+            else if(TextUtils.equals(intent.getAction(),MusicPlayerService.CHANGE_PROGRESS_TEXT)){
+                String progress = intent.getStringExtra(MusicPlayerService.UPDATE_TEXT);
+                Log.i("Passed Time", progress);
+                RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.activity_music_button);
+                remoteViews.setTextViewText(R.id.MusicPlayTime,progress);
                 AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
                 ComponentName componentName = new ComponentName(context,MusicWidget.class);
                 appWidgetManager.updateAppWidget(componentName,remoteViews);

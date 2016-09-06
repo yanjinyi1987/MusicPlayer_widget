@@ -29,6 +29,7 @@ public class MusicPlayerService extends Service {
     public static final String CHANGE_PLAY_BUTTON_TEXT = "MusicPlayerService.ChangeButtonText";
     public static final String CHANGE_DURATION_TEXT ="MusicPlayerService.ChangeBDurationText";
     public static final String CHANGE_PROGRESS_TEXT ="MusicPlayerService.ChangeProgressText";
+    public static final String CHANGE_PROGRESS_BAR ="MusicPlayerService.ChangeProgressBar";
     public static final String CHANGE_CURRENT_SONG_NAME = "MusicPlayerService.ChangeCurrentSongName";
     public static final String UPDATE_TEXT = "NEW_TEXT";
     //TextView mMusicLength;
@@ -37,6 +38,8 @@ public class MusicPlayerService extends Service {
     private boolean canBePaused=false;
     private int currentMusicIndex=-1, totalMusics =-1;
     private int mMusicDuration;
+    private int currentSeconds = 0;
+    private int currentMinutes = 0;
     String[] musicPostfix = {".mp3",".m4a",".wav"};
 
     MediaPlayer mMediaPlayer = new MediaPlayer();
@@ -99,7 +102,11 @@ public class MusicPlayerService extends Service {
             public void run() {
                 int progress = (int)((float)mCurrentTimePassed*100.0/mCurrentLength);
                 Log.i("ProgressBar Update",String.valueOf(progress));
-                updateWidgetText(CHANGE_PROGRESS_TEXT,String.valueOf(progress));
+                updateWidgetText(CHANGE_PROGRESS_BAR,String.valueOf(progress));
+                currentMinutes = mCurrentTimePassed/60;
+                currentSeconds = mCurrentTimePassed%60;
+                updateWidgetText(CHANGE_PROGRESS_TEXT,String.format("%010d", currentMinutes)+"m"+
+                        String.format("%010d",currentSeconds)+"s");
                 mCurrentTimePassed+=1; //1s
                 mHandler.postDelayed(mProgressUpdateRunnable,mUpdateInterval);
             }
@@ -298,7 +305,9 @@ public class MusicPlayerService extends Service {
             isStop = true;
             canBePaused = false;
             updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Start");
-            updateWidgetText(CHANGE_PROGRESS_TEXT,"0");
+            updateWidgetText(CHANGE_PROGRESS_BAR,"0");
+            updateWidgetText(CHANGE_PROGRESS_TEXT,"00m00s");
+
             currentMusicIndex=0;
             mHandler.removeCallbacks(mProgressUpdateRunnable);
         }
