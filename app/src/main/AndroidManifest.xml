@@ -17,6 +17,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="MusicPlayerService.ChangeButtonText"/>
                 <action android:name="MusicPlayerService.ChangeBDurationText" />
+                <action android:name="MusicPlayerService.ChangeProgressBar"/>
                 <action android:name="MusicPlayerService.ChangeProgressText"/>
                 <action android:name="MusicPlayerService.ChangeCurrentSongName"/>
             </intent-filter>

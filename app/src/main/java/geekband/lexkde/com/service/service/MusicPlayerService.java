@@ -105,8 +105,8 @@ public class MusicPlayerService extends Service {
                 updateWidgetText(CHANGE_PROGRESS_BAR,String.valueOf(progress));
                 currentMinutes = mCurrentTimePassed/60;
                 currentSeconds = mCurrentTimePassed%60;
-                updateWidgetText(CHANGE_PROGRESS_TEXT,String.format("%010d", currentMinutes)+"m"+
-                        String.format("%010d",currentSeconds)+"s");
+                updateWidgetText(CHANGE_PROGRESS_TEXT,String.format("%02d", currentMinutes)+"m"+
+                        String.format("%02d",currentSeconds)+"s");
                 mCurrentTimePassed+=1; //1s
                 mHandler.postDelayed(mProgressUpdateRunnable,mUpdateInterval);
             }
