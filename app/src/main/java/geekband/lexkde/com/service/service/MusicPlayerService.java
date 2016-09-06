@@ -102,10 +102,10 @@ public class MusicPlayerService extends Service {
             public void run() {
                 int progress = (int)((float)mCurrentTimePassed*100.0/mCurrentLength);
                 Log.i("ProgressBar Update",String.valueOf(progress));
-                updateWidgetText(CHANGE_PROGRESS_BAR,String.valueOf(progress));
+                updateWidgetAndActivityText(CHANGE_PROGRESS_BAR,String.valueOf(progress));
                 currentMinutes = mCurrentTimePassed/60;
                 currentSeconds = mCurrentTimePassed%60;
-                updateWidgetText(CHANGE_PROGRESS_TEXT,String.format("%02d", currentMinutes)+"m"+
+                updateWidgetAndActivityText(CHANGE_PROGRESS_TEXT,String.format("%02d", currentMinutes)+"m"+
                         String.format("%02d",currentSeconds)+"s");
                 mCurrentTimePassed+=1; //1s
                 mHandler.postDelayed(mProgressUpdateRunnable,mUpdateInterval);
@@ -114,7 +114,7 @@ public class MusicPlayerService extends Service {
         mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Start");
+                updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Start");
                 mHandler.removeCallbacks(mProgressUpdateRunnable);
             }
         });
@@ -154,7 +154,7 @@ public class MusicPlayerService extends Service {
         return super.onUnbind(intent);
     }
 
-    void updateWidgetText(String action, String text) {
+    void updateWidgetAndActivityText(String action, String text) {
         Intent intent = new Intent(action);
         intent.putExtra(UPDATE_TEXT,text);
         sendBroadcast(intent);
@@ -249,8 +249,8 @@ public class MusicPlayerService extends Service {
         minutes = getDuration()/60;
         seconds = getDuration()%60;
         mCurrentLength = getDuration();
-        updateWidgetText(CHANGE_DURATION_TEXT,minutes+"m"+seconds+"s");
-        updateWidgetText(CHANGE_CURRENT_SONG_NAME,"歌曲: "+musicFile.getName());
+        updateWidgetAndActivityText(CHANGE_DURATION_TEXT,minutes+"m"+seconds+"s");
+        updateWidgetAndActivityText(CHANGE_CURRENT_SONG_NAME,"歌曲: "+musicFile.getName());
         mCurrentTimePassed=0;
         mHandler.postDelayed(mProgressUpdateRunnable,mUpdateInterval);
         return true;
@@ -260,7 +260,7 @@ public class MusicPlayerService extends Service {
         if(isStop==true) {
             //从第1首开始播放
             if(startPlayMusic(0)) {
-                updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+                updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
                 canBePaused = true;
                 isStop = false;
                 currentMusicIndex=0;
@@ -270,13 +270,13 @@ public class MusicPlayerService extends Service {
             //暂停
             pausePlay();
             canBePaused=false;
-            updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Start");
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Start");
         }
         else {
             //恢复
             resumePlay();
             canBePaused=true;
-            updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
 
         }
     }
@@ -284,7 +284,7 @@ public class MusicPlayerService extends Service {
     public void playNextSong() {
         this.currentMusicIndex++;
         if(startPlayMusic(currentMusicIndex)) {
-            updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
             canBePaused = true;
             isStop = false;
         }
@@ -293,7 +293,7 @@ public class MusicPlayerService extends Service {
     public void playPreviousSong() {
         this.currentMusicIndex--;
         if(startPlayMusic(currentMusicIndex)) {
-            updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
             canBePaused = true;
             isStop = false;
         }
@@ -304,9 +304,9 @@ public class MusicPlayerService extends Service {
             stopPlay();
             isStop = true;
             canBePaused = false;
-            updateWidgetText(CHANGE_PLAY_BUTTON_TEXT,"Start");
-            updateWidgetText(CHANGE_PROGRESS_BAR,"0");
-            updateWidgetText(CHANGE_PROGRESS_TEXT,"00m00s");
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Start");
+            updateWidgetAndActivityText(CHANGE_PROGRESS_BAR,"0");
+            updateWidgetAndActivityText(CHANGE_PROGRESS_TEXT,"00m00s");
             currentMusicIndex=0;
             mHandler.removeCallbacks(mProgressUpdateRunnable);
         }

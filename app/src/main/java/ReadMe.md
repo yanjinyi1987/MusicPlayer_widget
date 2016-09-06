@@ -1,0 +1,10 @@
+# 完善音乐播放器
+
+有播放列表和播放服务，播放服务放在另外一个进程，分别用Messenger通信。播放显示类似网易云音乐的Notification
+
+这些东西的意思就是说做一个完整的播放器，有Notification界面，有widget界面，还有一个Activity的播放界面。Service变成remote的，与UI不在同一个进程中。soga！！
+
+之前使用回调的方式来与Service通信！现在这一点需要改过来。
+
+而widget使用广播的方式来进行通信，这个本身是跨进程的，不用改动。但是filedialog需要进行改变，最后的MainActivity界面也需要进行一些改变。最简单的MainActivity也使用广播来通信好了。
+但是我发现实际的播放器，MainActivity，Widget，Notification如果都打开，那么播放时都是同步的哦！

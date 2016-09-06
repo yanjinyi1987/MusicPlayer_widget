@@ -11,7 +11,11 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="MusicPlayerService.ChangeButtonText"/>
+                <action android:name="MusicPlayerService.ChangeBDurationText" />
+                <action android:name="MusicPlayerService.ChangeProgressText"/>
+                <action android:name="MusicPlayerService.ChangeProgressBar"/>
+                <action android:name="MusicPlayerService.ChangeCurrentSongName"/>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
