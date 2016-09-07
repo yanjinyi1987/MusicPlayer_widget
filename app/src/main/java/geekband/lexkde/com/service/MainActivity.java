@@ -1,5 +1,6 @@
 package geekband.lexkde.com.service;
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     };
+    private NotificationManager mNotificationManager;
 
 
     @Override
@@ -72,6 +74,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_music_button);
 
         initViews();
+        initNotification();
+    }
+
+    private void initNotification() {
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
 
     private void initViews() {
