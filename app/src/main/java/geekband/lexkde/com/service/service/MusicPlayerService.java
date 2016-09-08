@@ -103,7 +103,7 @@ public class MusicPlayerService extends Service {
                         updateWidgetAndActivityText(CHANGE_PROGRESS_BAR,"0");
                         updateWidgetAndActivityText(CHANGE_DURATION_TEXT,"");
                         updateWidgetAndActivityText(CHANGE_PROGRESS_TEXT,"");
-                        mMediaPlayer.reset();
+                        stopSong();
                         //stopForeground(true);
                         stopSelf();
                     }
