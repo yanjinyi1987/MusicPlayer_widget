@@ -6,17 +6,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import geekband.lexkde.com.service.service.MusicPlayerService;
 import geekband.lexkde.com.service.widget.MusicWidget;
@@ -25,16 +32,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public static final int BROADCAST_FROM_ACTIVITY = 1;
     public static final int BROADCAST_FROM_NOTIFICATION=2;
+    public static final String WHICH_TO_PLAY = "WhichToPlay";
+    public static final int SEND_MESSENGER_TO_SERVICE = 2;
     private Button mStartButton,mStopButton,mNextButton,mPrevButton,mChooseFileButton;
     private ProgressBar mProgressBar;
     private TextView mMusicLength,mMusicPlayTime,mSongName;
     private ListView mListView;
-    private Messenger mService = null;
 
+    //got Playlist from service
+    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private Messenger mServiceMessenger;
     /** Flag indicating whether we have called bind on the service. */
     boolean mBound;
 
-    private ServiceConnection mConnection = new ServiceConnection() {
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             // This is called when the connection with the service has been
@@ -42,19 +53,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // interact with the service.  We are communicating with the
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
-            mService = new Messenger(service);
+            Log.i("MainActivity","onServiceConnected");
+            mServiceMessenger = new Messenger(service);
             mBound = true;
+
+            Message msg = new Message();
+            msg.what = SEND_MESSENGER_TO_SERVICE;
+            msg.obj = mMessenger;
+            try {
+                mServiceMessenger.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
-            mService = null;
             mBound = false;
         }
     };
 
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MusicPlayerService.PLAYLIST_TO_MAINACTIVITY:
+                    String[] playlist = msg.getData().getStringArray("Playlist");
+                    try {
+                        for (int i = 0; i < playlist.length; i++)
+                            mPlayList.add(playlist[i]);
+                    }catch (Exception e) {
+                        Log.i("MainActivity","Array to ArrayList failed");
+                        e.printStackTrace();
+                    }
+                    mArrayAdapter.notifyDataSetChanged();
+                default:
+                    super.handleMessage(msg);
+                    break;
+            }
+        }
+    }
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -105,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //mNotificationManager.notify(1,mNotification);
         }
     };
+    private List<String> mPlayList;
+    private ArrayAdapter<String> mArrayAdapter;
 
 
     @Override
@@ -130,6 +172,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intent.putExtra(MusicWidget.IDENTIFY_ID,BROADCAST_FROM_ACTIVITY);
         intent.setAction(MusicWidget.GET_CURRENT_STATUS);
         sendBroadcast(intent);
+
+        Intent intent_service = new Intent(this,MusicPlayerService.class);
+        startService(intent_service);
+        Intent intenttoService = new Intent(this,MusicPlayerService.class);
+        bindService(intenttoService,mServiceConnection,BIND_AUTO_CREATE);
     }
 
     @Override
@@ -150,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.i("MainActivity","onDestroy");
         StopPlayWhenExit();
         unregisterReceiver(mBroadcastReceiver);
+        unbindService(mServiceConnection);
         super.onDestroy();
     }
 
@@ -172,7 +220,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mSongName = (TextView) findViewById(R.id.SongName);
         mProgressBar = (ProgressBar) findViewById(R.id.SongProgress);
 
-        mListView = (ListView) findViewById(R.id.play_list);
+
 
         mStartButton.setOnClickListener(this);
         mStopButton.setOnClickListener(this);
@@ -180,10 +228,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mPrevButton.setOnClickListener(this);
         mChooseFileButton.setOnClickListener(this);
 
+        //Playlist
+        mPlayList = new ArrayList<>();
+        mArrayAdapter = new ArrayAdapter<>(MainActivity.this,
+                android.R.layout.simple_list_item_1,
+                mPlayList);
+        mListView = (ListView) findViewById(R.id.play_list);
+        mListView.setAdapter(mArrayAdapter);
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //TODO
+                Intent newIntent = new Intent();
+                newIntent.setAction(MusicWidget.START);
+                newIntent.putExtra(MusicWidget.IDENTIFY_ID, BROADCAST_FROM_ACTIVITY);
+                newIntent.putExtra(WHICH_TO_PLAY,position);
+                sendBroadcast(newIntent);
             }
         });
     }

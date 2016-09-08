@@ -16,14 +16,17 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +48,7 @@ public class MusicPlayerService extends Service {
     public static final String CHANGE_PROGRESS_TEXT ="MusicPlayerService.ChangeProgressText";
     public static final String CHANGE_CURRENT_SONG_NAME = "MusicPlayerService.ChangeCurrentSongName";
     public static final String UPDATE_TEXT = "NEW_TEXT";
+    public static final int PLAYLIST_TO_MAINACTIVITY = 3;
     //TextView mMusicLength;
     private String mDirPath;
     private boolean isStop=true;
@@ -59,8 +63,6 @@ public class MusicPlayerService extends Service {
     private Map<String, File> thePlayList;
 
     private String[] fileNameInMusicList;
-
-    LocalBinder mLocalBinder = new LocalBinder();
 
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -93,6 +95,10 @@ public class MusicPlayerService extends Service {
                         }
                         updateWidgetAndActivityText(CHANGE_DURATION_TEXT,currentDurationString);
                     }
+                    if(fromWhere==MainActivity.BROADCAST_FROM_ACTIVITY) {
+                        //get playlist
+
+                    }
                     break;
                 case MusicWidget.STOP_FOREGROUND_SERVICE:
                     Log.i("YJY1986","action_STOP_FOREGROUND_SERVICE");
@@ -103,7 +109,8 @@ public class MusicPlayerService extends Service {
                         updateWidgetAndActivityText(CHANGE_PROGRESS_BAR,"0");
                         updateWidgetAndActivityText(CHANGE_DURATION_TEXT,"");
                         updateWidgetAndActivityText(CHANGE_PROGRESS_TEXT,"");
-                        mMediaPlayer.reset();
+                        stopSong();
+                        //mMediaPlayer.reset();
                         //stopForeground(true);
                         stopSelf();
                     }
@@ -119,6 +126,7 @@ public class MusicPlayerService extends Service {
     private int mUpdateInterval = 1000; //1000ms
     private Runnable mProgressUpdateRunnable;
     private String currentDurationString;
+    private Messenger clientMessenger;
 
     class IncomingHandler extends Handler {
         @Override
@@ -133,10 +141,28 @@ public class MusicPlayerService extends Service {
                     if(mDirPath!=null) {
                         Log.i("YJY1987","Got Dir Path"+mDirPath);
                         getMusicFileList(mDirPath);
+                        //return Playlist here
+                        Message playlistMsg = new Message();
+                        playlistMsg.what = PLAYLIST_TO_MAINACTIVITY;
+                        playlistMsg.getData().putStringArray("Playlist",fileNameInMusicList);
+
+                        if(clientMessenger!=null) {
+                            try {
+                                clientMessenger.send(playlistMsg);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        else {
+                            Log.i(":MusicPlayerMessage","we didn't get clientMessenger");
+                        }
                     }
                     else {
                         Toast.makeText(MusicPlayerService.this,"请选择一个目录",Toast.LENGTH_SHORT).show();
                     }
+                    break;
+                case MainActivity.SEND_MESSENGER_TO_SERVICE:
+                    clientMessenger = (Messenger) msg.obj;
                     break;
                 default:
                     super.handleMessage(msg);
@@ -274,6 +300,7 @@ public class MusicPlayerService extends Service {
     @Override
     public void onDestroy() {
         Log.i(TAG,"onDestroy");
+        //don't call mNotificationManager.cancel(1) again
         unregisterReceiver(receiver);
         super.onDestroy();
     }
@@ -532,25 +559,5 @@ public class MusicPlayerService extends Service {
         Log.i("YJY1987","1");
         //注意这里的写法
         fileNameInMusicList = thePlayList.keySet().toArray(new String[0]);
-    }
-
-//    public void onFinishFileDialog(String choosedPath,int totalMusics) {
-//        mDirPath = choosedPath;
-//        this.totalMusics = totalMusics;
-//        Toast.makeText(this,mDirPath,Toast.LENGTH_SHORT).show();
-//        if(mDirPath!=null) {
-//            Log.i("YJY1987","Got Dir Path"+mDirPath);
-//            getMusicFileList(mDirPath);
-//        }
-//        else {
-//            Toast.makeText(this,"请选择一个目录",Toast.LENGTH_SHORT).show();
-//        }
-//    }
-
-
-    public class LocalBinder extends Binder {
-        public MusicPlayerService getService() {
-            return MusicPlayerService.this;
-        }
     }
 }
