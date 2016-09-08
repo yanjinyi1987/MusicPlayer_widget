@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".service.MusicPlayerService">
+    android:layout_height="match_parent">
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start"
+        android:text="@string/play_music"
         android:layout_marginBottom="10dp"
         android:id="@+id/PlayMusic"/>
     <Button
@@ -61,13 +55,13 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/SongName"
         android:layout_marginBottom="10dp"
+        android:max="100"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:id="@+id/SongProgress"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="00m00s"
         android:layout_alignRight="@+id/SongProgress"
         android:layout_below="@+id/SongProgress"
         android:id="@+id/MusicLength"
@@ -76,7 +70,6 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="00m00s"
         android:layout_below="@+id/SongProgress"
         android:layout_alignLeft="@+id/SongProgress"
         android:layout_marginBottom="10dp"

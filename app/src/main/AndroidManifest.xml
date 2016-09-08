@@ -8,14 +8,10 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <action android:name="MusicPlayerService.ChangeButtonText"/>
-                <action android:name="MusicPlayerService.ChangeBDurationText" />
-                <action android:name="MusicPlayerService.ChangeProgressText"/>
-                <action android:name="MusicPlayerService.ChangeProgressBar"/>
-                <action android:name="MusicPlayerService.ChangeCurrentSongName"/>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -38,7 +34,8 @@
                 android:resource="@layout/setting_music_widget">
             </meta-data>
         </receiver>
-        <activity android:name=".FileDialogActivity"/>
+        <activity android:name=".FileDialogActivity"
+            android:launchMode="singleInstance"/>
     </application>
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

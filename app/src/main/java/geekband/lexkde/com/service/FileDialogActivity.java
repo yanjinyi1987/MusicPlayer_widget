@@ -6,6 +6,11 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -25,28 +30,42 @@ import geekband.lexkde.com.service.service.MusicPlayerService;
  * Created by lexkde on 16-8-6.
  */
 public class FileDialogActivity extends AppCompatActivity implements View.OnClickListener{
+    public static final int DATA_FROM_FILE_DIALOG = 1;
     Button mToFather,mOK,mCancel;
     ListView mlistView;
     private String mParentDirName,mStoragePath;
     private String[] mFileList;
     private ArrayAdapter<String> stringArrayAdapter;
     private TextView mTextView;
-    private MusicPlayerService mMusicPlayerService;
     //ReturnMusicContainerPathListener mFatherActivity;
+    private Messenger mMusicPlayerService = null;
+
+    /** Flag indicating whether we have called bind on the service. */
+    boolean mBound;
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         //service由onBind返回
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicPlayerService.LocalBinder localBinder = (MusicPlayerService.LocalBinder) service;
-            //getService必须declare为public
-            mMusicPlayerService = localBinder.getService();
-            mMusicPlayerService.onFinishFileDialog(null,0);
+//            MusicPlayerService.LocalBinder localBinder = (MusicPlayerService.LocalBinder) service;
+//            //getService必须declare为public
+//            mMusicPlayerService = localBinder.getService();
+//            mMusicPlayerService.onFinishFileDialog(null,0);
+            // This is called when the connection with the service has been
+            // established, giving us the object we can use to
+            // interact with the service.  We are communicating with the
+            // service using a Messenger, so here we get a client-side
+            // representation of that from the raw IBinder object.
+            mMusicPlayerService = new Messenger(service);
+            mBound = true;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mMusicPlayerService = null;
+            mBound = false;
         }
     };
     @Override
@@ -129,6 +148,8 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
 
     @Override
     public void onClick(View v) {
+        Message msg = new Message();
+        msg.what = DATA_FROM_FILE_DIALOG;
         switch (v.getId()) {
             case R.id.return_to_father:
                 File dir = new File(mParentDirName);
@@ -159,17 +180,41 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
                 //向host返回一个确定的目录来作为uri
                 if(mFileList!=null) {
                     Log.i("DJB",""+mFileList.length);
-                    mMusicPlayerService.onFinishFileDialog(mParentDirName, mFileList.length);
+                    //mMusicPlayerService.onFinishFileDialog(mParentDirName, mFileList.length);
+                    //msg.obj = new DataToService(mParentDirName,mFileList.length);
+                    msg.getData().putParcelable("DataToService",new DataToService(mParentDirName,mFileList.length));
+                    try {
+                        mMusicPlayerService.send(msg);
+                    } catch (RemoteException e) {
+                        Log.d("FileDialogActivity","ok error");
+                        e.printStackTrace();
+                    }
                 }
                 else {
-                    mMusicPlayerService.onFinishFileDialog(null,0);
+                    //http://stackoverflow.com/questions/15005615/class-not-found-when-unmarshalling-when-passing-parcelable-through-messenger-to
+
+                    //mMusicPlayerService.onFinishFileDialog(null,0);
+                    msg.getData().putParcelable("DataToService",new DataToService(null,0));
+                    try {
+                        mMusicPlayerService.send(msg);
+                    } catch (RemoteException e) {
+                        Log.d("FileDialogActivity","ok error null");
+                        e.printStackTrace();
+                    }
                 }
                 unbindService(mServiceConnection);
                 finish();
                 break;
             case R.id.cancel_button:
                 //向host返回一个null
-                mMusicPlayerService.onFinishFileDialog(null,0);
+                //when using remoteService
+                msg.getData().putParcelable("DataToService",new DataToService(null,0));
+                try {
+                    mMusicPlayerService.send(msg);
+                } catch (RemoteException e) {
+                    Log.d("FileDialogActivity","cancle error");
+                    e.printStackTrace();
+                }
                 unbindService(mServiceConnection);
                 finish();
                 break;
