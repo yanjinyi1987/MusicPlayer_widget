@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -47,7 +48,10 @@ public class MusicPlayerService extends Service {
     public static final String CHANGE_PROGRESS_BAR ="MusicPlayerService.ChangeProgressBar";
     public static final String CHANGE_PROGRESS_TEXT ="MusicPlayerService.ChangeProgressText";
     public static final String CHANGE_CURRENT_SONG_NAME = "MusicPlayerService.ChangeCurrentSongName";
+    public static final String CLEAR_ALL = "MusicPlayerService.ClearAll";
     public static final String UPDATE_TEXT = "NEW_TEXT";
+    public static final String UPDATE_INT = "NEW_INT";
+    public static final String SEND_CURRENT_MUSIC_INDEX = "MusicPlayerService.SendCurrentMusicIndex";
     public static final int PLAYLIST_TO_MAINACTIVITY = 3;
     //TextView mMusicLength;
     private String mDirPath;
@@ -69,14 +73,27 @@ public class MusicPlayerService extends Service {
         public void onReceive(Context context, Intent intent) {
             String action  = intent.getAction();
             int fromWhere = intent.getIntExtra(MusicWidget.IDENTIFY_ID,-1);
+            int whichToPlay = intent.getIntExtra(MainActivity.WHICH_TO_PLAY,0);
             switch (action) {
                 case MusicWidget.START :
                     Log.i("YJY1986","action_start");
                     playSong();
                     break;
+                case MusicWidget.PLAY_RANDOM:
+                    playRandomSong(whichToPlay);
+                    break;
                 case MusicWidget.STOP:
-                    Log.i("YJY1986","action_stop");
+                    Log.i("YJY1986","action_stop from "+fromWhere);
                     stopSong();
+                    break;
+                case MusicWidget.PAUSE:
+                    pauseSong();
+                    break;
+                case MusicWidget.RESTART:
+                    restartSong();
+                    break;
+                case MusicWidget.RESUME:
+                    resumeSong();
                     break;
                 case MusicWidget.NEXT_SONG:
                     playNextSong();
@@ -87,28 +104,32 @@ public class MusicPlayerService extends Service {
                     Log.i("YJY1986","action_prev");
                     break;
                 case MusicWidget.GET_CURRENT_STATUS:
-                    Log.i("YJY1986","action_GET_CURRENT_STATUS");
+                    Log.i("YJY1986","action_GET_CURRENT_STATUS"+fromWhere);
                     if(fromWhere==MainActivity.BROADCAST_FROM_ACTIVITY ||
                             fromWhere==MusicWidget.BROADCAST_FROM_WIDGET) {
                         if(canBePaused==true) {
                             updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
                         }
-                        updateWidgetAndActivityText(CHANGE_DURATION_TEXT,currentDurationString);
+                        updateWidgetAndActivityText(CHANGE_DURATION_TEXT,
+                                currentDurationString==null?"":currentDurationString);
                     }
                     if(fromWhere==MainActivity.BROADCAST_FROM_ACTIVITY) {
                         //get playlist
-
+                        getPlaylist();
+                        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex==-1?0:currentMusicIndex);
                     }
                     break;
                 case MusicWidget.STOP_FOREGROUND_SERVICE:
                     Log.i("YJY1986","action_STOP_FOREGROUND_SERVICE");
-                    if(fromWhere==MainActivity.BROADCAST_FROM_NOTIFICATION) {
+                    if(fromWhere==MainActivity.BROADCAST_FROM_NOTIFICATION||
+                            fromWhere == MainActivity.BROADCAST_FROM_ACTIVITY) {
                         updateWidgetAndActivityText(CHANGE_CURRENT_SONG_NAME,"");
                         updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,
                                 getResources().getString(R.string.play_music));
                         updateWidgetAndActivityText(CHANGE_PROGRESS_BAR,"0");
                         updateWidgetAndActivityText(CHANGE_DURATION_TEXT,"");
                         updateWidgetAndActivityText(CHANGE_PROGRESS_TEXT,"");
+                        updateWidgetAndActivityText(CLEAR_ALL,"");
                         stopSong();
                         //mMediaPlayer.reset();
                         //stopForeground(true);
@@ -120,7 +141,7 @@ public class MusicPlayerService extends Service {
             }
         }
     };
-    Handler mHandler = new Handler();
+    Handler mHandler = new Handler(); //used to update progress
     private int mCurrentLength=0;
     private int mCurrentTimePassed=0;
     private int mUpdateInterval = 1000; //1000ms
@@ -136,25 +157,13 @@ public class MusicPlayerService extends Service {
                     msg.getData().setClassLoader(DataToService.class.getClassLoader());
                     DataToService dataToService = msg.getData().getParcelable("DataToService");
                     mDirPath = dataToService.mParentDirName;
-                    totalMusics = dataToService.fileList_count;
+                    //totalMusics = dataToService.fileList_count;
                     Toast.makeText(MusicPlayerService.this,mDirPath,Toast.LENGTH_SHORT).show();
                     if(mDirPath!=null) {
                         Log.i("YJY1987","Got Dir Path"+mDirPath);
-                        getMusicFileList(mDirPath);
-                        //return Playlist here
-                        Message playlistMsg = new Message();
-                        playlistMsg.what = PLAYLIST_TO_MAINACTIVITY;
-                        playlistMsg.getData().putStringArray("Playlist",fileNameInMusicList);
-
-                        if(clientMessenger!=null) {
-                            try {
-                                clientMessenger.send(playlistMsg);
-                            } catch (RemoteException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        else {
-                            Log.i(":MusicPlayerMessage","we didn't get clientMessenger");
+                        if(getMusicFileList(mDirPath)==true) {
+                            //return Playlist here
+                            getPlaylist();
                         }
                     }
                     else {
@@ -163,11 +172,34 @@ public class MusicPlayerService extends Service {
                     break;
                 case MainActivity.SEND_MESSENGER_TO_SERVICE:
                     clientMessenger = (Messenger) msg.obj;
+                    getPlaylist();
                     break;
                 default:
                     super.handleMessage(msg);
                     break;
             }
+        }
+    }
+
+    private void getPlaylist() {
+        Log.i(":SendToMainActivity","PlayList");
+        Bundle bundle = new Bundle();
+        bundle.putStringArray("Playlist",fileNameInMusicList);
+        bundle.putInt("MusicIndex",currentMusicIndex==-1?0:currentMusicIndex);
+        Message playlistMsg = new Message();
+        playlistMsg.what = PLAYLIST_TO_MAINACTIVITY;
+        //playlistMsg.getData().putStringArray("Playlist",fileNameInMusicList);
+        playlistMsg.getData().putBundle("PlaylistBundle",bundle);
+
+        if(clientMessenger!=null) {
+            try {
+                clientMessenger.send(playlistMsg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            Log.i(":MusicPlayerMessage","we didn't get clientMessenger");
         }
     }
     /**
@@ -186,7 +218,11 @@ public class MusicPlayerService extends Service {
         //添加IntentFilter
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MusicWidget.START);
+        intentFilter.addAction(MusicWidget.PLAY_RANDOM);
         intentFilter.addAction(MusicWidget.STOP);
+        intentFilter.addAction(MusicWidget.PAUSE);
+        intentFilter.addAction(MusicWidget.RESTART);
+        intentFilter.addAction(MusicWidget.RESUME);
         intentFilter.addAction(MusicWidget.NEXT_SONG);
         intentFilter.addAction(MusicWidget.PREV_SONG);
         intentFilter.addAction(MusicWidget.GET_CURRENT_STATUS);
@@ -217,6 +253,7 @@ public class MusicPlayerService extends Service {
             public void onCompletion(MediaPlayer mp) {
                 updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,getResources().getString(R.string.play_music));
                 mHandler.removeCallbacks(mProgressUpdateRunnable);
+                playNextSong();
             }
         });
         initNotification();
@@ -298,25 +335,30 @@ public class MusicPlayerService extends Service {
     }
 
     @Override
-    public void onDestroy() {
-        Log.i(TAG,"onDestroy");
-        //don't call mNotificationManager.cancel(1) again
-        unregisterReceiver(receiver);
-        super.onDestroy();
+    public void onTrimMemory(int level) {
+        Log.i(TAG,"onTrimMemory");
+        super.onTrimMemory(level);
     }
 
-
+    @Override
+    public void onDestroy() {
+        Log.i(TAG,"onDestroy");
+        //don't call mNotificationManager.cancel(1) or send Message
+        unregisterReceiver(receiver);
+        //updateWidgetAndActivityText(CLEAR_ALL,"");
+        super.onDestroy();
+    }
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         Log.i(TAG,"onBind");
-        if(mDirPath!=null) {
-            Log.i("YJY1987","Enter onFinishFileDialog");
-            getMusicFileList(mDirPath);
-        }
-        else {
-            Toast.makeText(this,"请选择一个目录",Toast.LENGTH_SHORT).show();
-        }
+//        if(mDirPath!=null) {
+//            Log.i("YJY1987","Enter onFinishFileDialog");
+//            getMusicFileList(mDirPath);
+//        }
+//        else {
+//            Toast.makeText(this,"请选择一个目录",Toast.LENGTH_SHORT).show();
+//        }
         //return mLocalBinder;
         return mMessenger.getBinder();
     }
@@ -325,6 +367,12 @@ public class MusicPlayerService extends Service {
     public boolean onUnbind(Intent intent) {
         Log.i(TAG,"onUnbind");
         return super.onUnbind(intent);
+    }
+
+    private void sendPrivateBroadcast(String action,int musicIndex) {
+        Intent intent = new Intent(action);
+        intent.putExtra(UPDATE_INT,musicIndex);
+        sendBroadcast(intent);
     }
 
     void updateWidgetAndActivityText(String action, String text) {
@@ -442,6 +490,7 @@ public class MusicPlayerService extends Service {
             index=0;
             currentMusicIndex=0;
         }
+        Log.i(":totalMusic is ",""+totalMusics);
         String filename = fileNameInMusicList[index];
         File musicFile = thePlayList.get(filename);
         String uri = musicFile.getAbsolutePath(); //把这个uri发送给播放服务
@@ -483,32 +532,96 @@ public class MusicPlayerService extends Service {
             canBePaused=false;
             updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,
                     getResources().getString(R.string.play_music));
+            //progress update should stop
+            mHandler.removeCallbacks(mProgressUpdateRunnable);
         }
         else {
             //恢复
             resumePlay();
             canBePaused=true;
             updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+            //progress update should resume
+            mHandler.postDelayed(mProgressUpdateRunnable,mUpdateInterval);
+        }
+        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex);
+    }
 
+    public void pauseSong() {
+        if(canBePaused==true) {
+            //暂停
+            pausePlay();
+            canBePaused=false;
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,
+                    getResources().getString(R.string.play_music));
+            //progress update should stop
+            mHandler.removeCallbacks(mProgressUpdateRunnable);
         }
     }
 
+    public void restartSong() {
+        if(isStop==false) {
+            playRandomSong(currentMusicIndex == -1 ? 0 : currentMusicIndex);
+        }
+        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex == -1 ? 0 : currentMusicIndex);
+    }
+
+    public void resumeSong() {
+        if(isStop==false && canBePaused==false) {
+            //恢复
+            resumePlay();
+            canBePaused = true;
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT, "Pause");
+            //progress update should resume
+            mHandler.postDelayed(mProgressUpdateRunnable, mUpdateInterval);
+        }
+    }
+
+    public void playRandomSong(int index) {
+        try {
+            mHandler.removeCallbacks(mProgressUpdateRunnable);
+        }catch (Exception e) {
+            Log.i(":Handler issue","Maybe not exist");
+            e.printStackTrace();
+        }
+        this.currentMusicIndex=index;
+        if(startPlayMusic(currentMusicIndex)) {
+            updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
+            canBePaused = true;
+            isStop = false;
+        }
+        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex);
+    }
+
     public void playNextSong() {
+        try {
+            mHandler.removeCallbacks(mProgressUpdateRunnable);
+        }catch (Exception e) {
+            Log.i(":Handler issue","Maybe not exist");
+            e.printStackTrace();
+        }
         this.currentMusicIndex++;
         if(startPlayMusic(currentMusicIndex)) {
             updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
             canBePaused = true;
             isStop = false;
         }
+        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex);
     }
 
     public void playPreviousSong() {
+        try {
+            mHandler.removeCallbacks(mProgressUpdateRunnable);
+        }catch (Exception e) {
+            Log.i(":Handler issue","Maybe not exist");
+            e.printStackTrace();
+        }
         this.currentMusicIndex--;
         if(startPlayMusic(currentMusicIndex)) {
             updateWidgetAndActivityText(CHANGE_PLAY_BUTTON_TEXT,"Pause");
             canBePaused = true;
             isStop = false;
         }
+        sendPrivateBroadcast(SEND_CURRENT_MUSIC_INDEX,currentMusicIndex);
     }
 
     public void stopSong() {
@@ -526,10 +639,11 @@ public class MusicPlayerService extends Service {
     }
 
 
-    public void getMusicFileList(String dirPath) {
+    public boolean getMusicFileList(String dirPath) {
         //Update ListView PlayList here!
         //使用HashMap来进行存储或者sqlite（）
         Log.i("YJY1987","enter getMusicFileList 1");
+        Map <String,File> old_thePlayList=thePlayList;
         thePlayList = new HashMap<>();
         File fMusicList = new File(dirPath);
         FilenameFilter musicFilter = new FilenameFilter() {
@@ -551,13 +665,20 @@ public class MusicPlayerService extends Service {
         };
         Log.i("YJY1987","enter getMusicFileList 2");
         File[] musicList = fMusicList.listFiles(musicFilter);
+        if(musicList==null||musicList.length==0) {
+            Log.i("+++YJY1987","No music file in directory");
+            thePlayList=old_thePlayList;
+            return false;
+        }
         Log.i("YJY1987","enter getMusicFileList 3");
         for(int i=0;i<musicList.length;i++) {
-            Log.i("YJY1987",musicList[i].getName());
+            Log.i("YJY1987",""+musicList[i].getName());
             thePlayList.put(musicList[i].getName(),musicList[i]);
         }
         Log.i("YJY1987","1");
         //注意这里的写法
         fileNameInMusicList = thePlayList.keySet().toArray(new String[0]);
+        totalMusics = fileNameInMusicList.length;
+        return true;
     }
 }

@@ -29,13 +29,15 @@
                 <action android:name="MusicPlayerService.ChangeProgressText"/>
                 <action android:name="MusicPlayerService.ChangeProgressBar"/>
                 <action android:name="MusicPlayerService.ChangeCurrentSongName"/>
+                <action android:name="MusicPlayerService.ClearAll"/>
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@layout/setting_music_widget">
             </meta-data>
         </receiver>
         <activity android:name=".FileDialogActivity"
-            android:launchMode="singleInstance"/>
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"/>
     </application>
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

@@ -48,6 +48,14 @@
         android:layout_marginBottom="10dp"
         android:id="@+id/NextSong"/>
 
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/close" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

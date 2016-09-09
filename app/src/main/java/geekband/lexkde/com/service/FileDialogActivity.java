@@ -25,12 +25,14 @@ import java.io.File;
 import java.util.Arrays;
 
 import geekband.lexkde.com.service.service.MusicPlayerService;
+import geekband.lexkde.com.service.widget.MusicWidget;
 
 /**
  * Created by lexkde on 16-8-6.
  */
 public class FileDialogActivity extends AppCompatActivity implements View.OnClickListener{
     public static final int DATA_FROM_FILE_DIALOG = 1;
+    public static final int BROADCAST_FROM_FILE_DIALOGACTIVITY = 4;
     Button mToFather,mOK,mCancel;
     ListView mlistView;
     private String mParentDirName,mStoragePath;
@@ -75,11 +77,20 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
         setContentView(R.layout.file_dialog);
         initViews();
         startAndBindMusicService();
+        sendPrivateBroadcast(MusicWidget.PAUSE);
     }
 
+    void sendPrivateBroadcast(String Action) {
+        Intent intent = new Intent();
+        intent.putExtra(MusicWidget.IDENTIFY_ID,BROADCAST_FROM_FILE_DIALOGACTIVITY);
+        intent.setAction(Action);
+        sendBroadcast(intent);
+    }
     void startAndBindMusicService() {
-        Intent intent_service = new Intent(this,MusicPlayerService.class);
-        startService(intent_service);
+        if(!MainActivity.isServiceRunning(FileDialogActivity.this,"MusicPlayerService")) {
+            Intent intent_service = new Intent(this, MusicPlayerService.class);
+            startService(intent_service);
+        }
         Intent intent = new Intent(this,MusicPlayerService.class);
         bindService(intent,mServiceConnection,BIND_AUTO_CREATE);
     }
@@ -160,7 +171,7 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
                     mFileList = getFileList(parentDir);
                     Arrays.sort(mFileList);
                     Log.i("YJY1987", "mFileList 2");
-                    if (mFileList != null) {
+                    if (mFileList!= null) {
                         Log.i("YJY1987", "mFileList is not null");
                         stringArrayAdapter = new ArrayAdapter<String>(FileDialogActivity.this
                                 ,android.R.layout.simple_list_item_1
@@ -185,6 +196,7 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
                     msg.getData().putParcelable("DataToService",new DataToService(mParentDirName,mFileList.length));
                     try {
                         mMusicPlayerService.send(msg);
+                        sendPrivateBroadcast(MusicWidget.RESTART);
                     } catch (RemoteException e) {
                         Log.d("FileDialogActivity","ok error");
                         e.printStackTrace();
@@ -201,6 +213,7 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
                         Log.d("FileDialogActivity","ok error null");
                         e.printStackTrace();
                     }
+                    sendPrivateBroadcast(MusicWidget.RESUME);
                 }
                 unbindService(mServiceConnection);
                 finish();
@@ -209,6 +222,7 @@ public class FileDialogActivity extends AppCompatActivity implements View.OnClic
                 //向host返回一个null
                 //when using remoteService
                 msg.getData().putParcelable("DataToService",new DataToService(null,0));
+                sendPrivateBroadcast(MusicWidget.RESUME);
                 try {
                     mMusicPlayerService.send(msg);
                 } catch (RemoteException e) {

@@ -26,6 +26,10 @@ public class MusicWidget extends AppWidgetProvider {
     public static final String PREV_SONG = "MusicWidget.TO_SERVICE_PREV_SONG"; //3
     public static final String STOP = "MusicWidget.TO_SERVICE_STOP"; //4
     public static final String START = "MusicWidget.TO_SERVICE_START"; //7
+    public static final String PAUSE = "MusicWidget.TO_SERVICE_PAUSE";
+    public static final String RESUME = "MusicWidget.TO_SERVICE_RESUME";
+    public static final String RESTART = "MusicWidget.TO_SERVICE_RESTART";
+    public static final String PLAY_RANDOM = "MusicWidget.PLAY_RANDOM_SONG";
     public static final String GET_CURRENT_STATUS = "MusicWidget.GET_CURRENT_STATUS";
     public static final String STOP_FOREGROUND_SERVICE = "MusicWidget.STOP_FOREGROUND_SERVICE";
     public static final String IDENTIFY_ID = "IdentifyID";
@@ -41,8 +45,6 @@ public class MusicWidget extends AppWidgetProvider {
         intent.putExtra(MusicWidget.IDENTIFY_ID,BROADCAST_FROM_WIDGET);
         intent.setAction(MusicWidget.GET_CURRENT_STATUS);
         context.sendBroadcast(intent);
-
-
     }
 
     @Override
@@ -76,6 +78,14 @@ public class MusicWidget extends AppWidgetProvider {
                 String progress = intent.getStringExtra(MusicPlayerService.UPDATE_TEXT);
                 //Log.i("Passed Time", progress);
                 remoteViews.setTextViewText(R.id.MusicPlayTime,progress);
+            }
+            else if(TextUtils.equals(intent.getAction(),MusicPlayerService.CLEAR_ALL)) {
+                remoteViews.setTextViewText(R.id.PlayMusic,
+                        context.getResources().getString(R.string.play_music));
+                remoteViews.setTextViewText(R.id.MusicLength, "");
+                remoteViews.setTextViewText(R.id.SongName, "");
+                remoteViews.setProgressBar(R.id.SongProgress,100,0,false);
+                remoteViews.setTextViewText(R.id.MusicPlayTime,"");
             }
             else {
 
